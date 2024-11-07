@@ -7,19 +7,29 @@ import { getTodos, USER_ID } from './api/todos';
 import { Todo } from './types/Todo';
 import classNames from 'classnames';
 
+type SelectedFilter = 'All' | 'Active' | 'Completed';
+
 export const App: React.FC = () => {
   if (!USER_ID) {
     return <UserWarning />;
   }
 
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [visiblTodos, setVisiblTodos] = useState<Todo[]>([]);
   const [errorLoad, setErrorLoad] = useState(false);
-  const [selectedAll, setSelectedAll] = useState(true);
-  const [selectedActive, setSelectedActive] = useState(false);
-  const [selectedCompleted, setSelectedCompleted] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<SelectedFilter>('All');
 
-  const ItemLeft: number = todos.filter(
+  const visibleTodos = todos.filter(todo => {
+    switch (selectedFilter) {
+      case 'All':
+        return true;
+      case 'Active':
+        return todo.completed === false;
+      case 'Completed':
+        return todo.completed === true;
+    }
+  });
+
+  const itemLeft: number = todos.filter(
     todo => todo.completed === false,
   ).length;
 
@@ -27,7 +37,6 @@ export const App: React.FC = () => {
     getTodos()
       .then(resultTodos => {
         setTodos(resultTodos);
-        setVisiblTodos(resultTodos);
       })
       .catch(() => {
         setErrorLoad(true);
@@ -68,7 +77,7 @@ export const App: React.FC = () => {
 
         {todos.length > 0 && (
           <section className="todoapp__main" data-cy="TodoList">
-            {visiblTodos.map(todo => (
+            {visibleTodos.map(todo => (
               <div
                 data-cy="Todo"
                 className={classNames('todo', { completed: todo.completed })}
@@ -118,7 +127,7 @@ export const App: React.FC = () => {
         {todos.length > 0 && (
           <footer className="todoapp__footer" data-cy="Footer">
             <span className="todo-count" data-cy="TodosCounter">
-              {ItemLeft} items left
+              {itemLeft} items left
             </span>
 
             {/* Active link should have the 'selected' class */}
@@ -126,15 +135,10 @@ export const App: React.FC = () => {
               <a
                 href="#/"
                 className={classNames('filter__link', {
-                  selected: selectedAll,
+                  selected: selectedFilter === 'All',
                 })}
                 data-cy="FilterLinkAll"
-                onClick={() => {
-                  setSelectedAll(true);
-                  setSelectedActive(false);
-                  setSelectedCompleted(false);
-                  setVisiblTodos(todos);
-                }}
+                onClick={() => setSelectedFilter('All')}
               >
                 All
               </a>
@@ -142,17 +146,10 @@ export const App: React.FC = () => {
               <a
                 href="#/active"
                 className={classNames('filter__link', {
-                  selected: selectedActive,
+                  selected: selectedFilter === 'Active',
                 })}
                 data-cy="FilterLinkActive"
-                onClick={() => {
-                  setSelectedAll(false);
-                  setSelectedActive(true);
-                  setSelectedCompleted(false);
-                  setVisiblTodos(() => {
-                    return todos.filter(todo => todo.completed === false);
-                  });
-                }}
+                onClick={() => setSelectedFilter('Active')}
               >
                 Active
               </a>
@@ -160,17 +157,10 @@ export const App: React.FC = () => {
               <a
                 href="#/completed"
                 className={classNames('filter__link', {
-                  selected: selectedCompleted,
+                  selected: selectedFilter === 'Completed',
                 })}
                 data-cy="FilterLinkCompleted"
-                onClick={() => {
-                  setSelectedAll(false);
-                  setSelectedActive(false);
-                  setSelectedCompleted(true);
-                  setVisiblTodos(() => {
-                    return todos.filter(todo => todo.completed === true);
-                  });
-                }}
+                onClick={() => setSelectedFilter('Completed')}
               >
                 Completed
               </a>
